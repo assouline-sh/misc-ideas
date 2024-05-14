@@ -1,10 +1,13 @@
-import spotipy
-from spotipy.oauth2 import SpotifyOAuth
 import json
+from moviepy.audio.io.AudioFileClip import AudioFileClip
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, TRCK
+import os
+from pytube import YouTube
 import re
 import requests
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 import sys
 
 # Get spotify credentials, must be added to creds.txt
@@ -27,9 +30,17 @@ def authenticate():
 
 # Download audio from given url and write to filename
 def download_audio(url, filename):
-    r = requests.get(url)
-    with open(filename, 'wb') as f:
-        f.write(r.content)
+	youtube = YouTube("https://www.youtube.com/watch?v=51zjlMhdSTE")
+
+	#video = youtube.streams.get_audio_only()
+	video = youtube.streams.get_by_itag(140)
+	out_video_filepath = video.download(output_path="audio")
+	base, ext = os.path.splitext(out_video_filepath)
+	out_audio_filepath = base + '.mp3'
+
+	moviepy_audio_clip = AudioFileClip(out_video_filepath)
+	moviepy_audio_clip.write_audiofile(out_audio_filepath, verbose=False, logger=None)
+	moviepy_audio_clip.close()
 
 # Get all tracks in a playlist
 def get_tracks(sp, username, playlist_id):
@@ -76,9 +87,10 @@ def get_playlist(sp, username, playlist_id):
 		if audio_url:
 			filename = f"{track_name}.mp3"
 			try:
-				download_audio(audio_url, filename)
-				add_metadata(filename, track_name, artist, album_name, track_num, album_art)
-				print(f"Downloaded {filename}")
+				print(track_name, artist)
+				#download_audio(audio_url, filename)
+				#add_metadata(filename, track_name, artist, album_name, track_num, album_art)
+				#print(f"Downloaded {filename}")
 			except Exception as e:
 				print(f"[!] ERROR: Failed to download {filename} because {e}. Skipping.")
 			
